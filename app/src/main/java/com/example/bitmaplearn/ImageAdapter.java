@@ -62,17 +62,13 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
         String url = imageUrls.get(position);
         String fileName = "image_" + position + ".jpg";
-        File cacheDir = new File(context.getCacheDir(), "cached_images");
+        File cacheDir = new File(context.getCacheDir(), "image11");
         File file = new File(cacheDir, fileName);
 
         if (file.exists()) {
-            if(("loadedFile").equals(holder.imageView.getTag())){
-                return;
-            }
             Bitmap cachedBitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
             holder.imageView.setImageBitmap(cachedBitmap);
             holder.currentBitmap = cachedBitmap;
-            holder.imageView.setTag("loadedFile");
             Log.d("Decode", "DecodeFile");
             return;
         }
@@ -83,13 +79,14 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         }
 
         if (downloadedPositions.contains(position)) {
+            holder.imageView.setImageResource(R.drawable.ic_launcher_background);
             return;
         }
 
         downloadedPositions.add(position);
         executorService.submit(() -> {
             Bitmap bitmap = getBitmapFromURL(url);
-            File fileBitmap = saveBitmapToFile(context, bitmap, fileName);
+            File fileBitmap = saveBitmapToFile(context, bitmap, fileName, cacheDir);
             holder.imageView.post(() -> holder.imageView.setImageBitmap(bitmap));
             holder.imageView.setTag("loadedThread" + position);
             Log.d("Decode", "Executor: " + position);
@@ -122,8 +119,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         }
     }
 
-    public File saveBitmapToFile(Context context, Bitmap bitmap, String fileName) {
-        File directory = new File(context.getCacheDir(), "cached_images");
+    public File saveBitmapToFile(Context context, Bitmap bitmap, String fileName, File directory) {
         File file = new File(directory, fileName);
         FileOutputStream out = null;
 

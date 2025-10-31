@@ -16,19 +16,27 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
+
+    private ExecutorService executorService;
     private List<String> imageUrls;
     private Context context;
+    private final Set<Integer> downloadedPositions = new HashSet<>();
 
     public ImageAdapter(Context context, List<String> imageUrls) {
         this.context = context;
         this.imageUrls = imageUrls;
+        this.executorService = Executors.newFixedThreadPool(imageUrls.size());
     }
 
     public class ImageViewHolder extends RecyclerView.ViewHolder {
@@ -54,13 +62,18 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
         String url = imageUrls.get(position);
         String fileName = "image_" + position + ".jpg";
-        File cacheDir = new File(context.getCacheDir(), "images");
+        File cacheDir = new File(context.getCacheDir(), "cached_images");
         File file = new File(cacheDir, fileName);
 
         if (file.exists()) {
+            if(("loadedFile").equals(holder.imageView.getTag())){
+                return;
+            }
             Bitmap cachedBitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
             holder.imageView.setImageBitmap(cachedBitmap);
             holder.currentBitmap = cachedBitmap;
+            holder.imageView.setTag("loadedFile");
+            Log.d("Decode", "DecodeFile");
             return;
         }
 
@@ -69,11 +82,18 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
             holder.currentBitmap = null;
         }
 
-        new Thread(() -> {
+        if (downloadedPositions.contains(position)) {
+            return;
+        }
+
+        downloadedPositions.add(position);
+        executorService.submit(() -> {
             Bitmap bitmap = getBitmapFromURL(url);
             File fileBitmap = saveBitmapToFile(context, bitmap, fileName);
             holder.imageView.post(() -> holder.imageView.setImageBitmap(bitmap));
-        }).start();
+            holder.imageView.setTag("loadedThread" + position);
+            Log.d("Decode", "Executor: " + position);
+        });
     }
 
     @Override
@@ -103,9 +123,14 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     }
 
     public File saveBitmapToFile(Context context, Bitmap bitmap, String fileName) {
-        File directory = new File(context.getCacheDir(), "images");
+        File directory = new File(context.getCacheDir(), "cached_images");
         File file = new File(directory, fileName);
         FileOutputStream out = null;
+
+        if(!directory.exists()){
+            directory.mkdirs();
+        }
+
         try {
             out = new FileOutputStream(file);
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);

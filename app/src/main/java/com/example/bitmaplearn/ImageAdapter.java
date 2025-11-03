@@ -62,7 +62,9 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
         String url = imageUrls.get(position);
         String fileName = "image_" + position + ".jpg";
-        File cacheDir = new File(context.getCacheDir(), "image11");
+        File directory = new File(context.getCacheDir(), "imagess");
+        deleteDir(directory);
+        File cacheDir = new File(context.getCacheDir(), "image");
         File file = new File(cacheDir, fileName);
 
         if (file.exists()) {
@@ -73,24 +75,20 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
             return;
         }
 
-        if (holder.currentBitmap != null && !holder.currentBitmap.isRecycled()) {
-            holder.currentBitmap.recycle();
-            holder.currentBitmap = null;
-        }
-
         if (downloadedPositions.contains(position)) {
             holder.imageView.setImageResource(R.drawable.ic_launcher_background);
             return;
         }
 
-        downloadedPositions.add(position);
-        executorService.submit(() -> {
-            Bitmap bitmap = getBitmapFromURL(url);
-            File fileBitmap = saveBitmapToFile(context, bitmap, fileName, cacheDir);
-            holder.imageView.post(() -> holder.imageView.setImageBitmap(bitmap));
-            holder.imageView.setTag("loadedThread" + position);
-            Log.d("Decode", "Executor: " + position);
-        });
+            downloadedPositions.add(position);
+            executorService.submit(() -> {
+                synchronized (this) {
+                    Bitmap bitmap = getBitmapFromURL(url);
+                    File fileBitmap = saveBitmapToFile(bitmap, fileName, cacheDir);
+                    holder.imageView.post(() -> holder.imageView.setImageBitmap(bitmap));
+                    Log.d("Decode", "Executor: " + position);
+                }
+            });
     }
 
     @Override
@@ -119,7 +117,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         }
     }
 
-    public File saveBitmapToFile(Context context, Bitmap bitmap, String fileName, File directory) {
+    public File saveBitmapToFile(Bitmap bitmap, String fileName, File directory) {
         File file = new File(directory, fileName);
         FileOutputStream out = null;
 
@@ -137,6 +135,25 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
             return null;
         }
     }
+
+    public static void deleteDir(File dir) {
+        if (dir != null && dir.exists()) {
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        deleteDir(file);
+                    } else {
+                        file.delete();
+                    }
+                }
+            }
+            dir.delete();
+            Log.d("Cache", "Đã xóa: " + dir.getAbsolutePath());
+        }
+    }
+
+
 }
 
 

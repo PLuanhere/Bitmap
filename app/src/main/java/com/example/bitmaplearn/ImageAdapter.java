@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -62,10 +63,12 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
         String url = imageUrls.get(position);
         String fileName = "image_" + position + ".jpg";
-        File directory = new File(context.getCacheDir(), "imagess");
+        File directory = new File(context.getCacheDir(), "image");
         deleteDir(directory);
-        File cacheDir = new File(context.getCacheDir(), "image");
+        File cacheDir = new File(context.getCacheDir(), "imagess");
         File file = new File(cacheDir, fileName);
+
+        holder.imageView.setImageResource(R.drawable.ic_launcher_background);
 
         if (file.exists()) {
             Bitmap cachedBitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
@@ -89,6 +92,10 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
                     Log.d("Decode", "Executor: " + position);
                 }
             });
+
+            holder.imageView.setOnClickListener(v -> {
+                Toast.makeText(context, "Image at position " + position + " clicked.", Toast.LENGTH_SHORT).show();
+            });
     }
 
     @Override
@@ -110,7 +117,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
             }
             InputStream input = response.body().byteStream();
             Bitmap bitmap = BitmapFactory.decodeStream(input);
-            Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, true);
+            Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, 250, 250, true);
             return scaledBitmap;
         } catch (IOException e) {
             return BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher_background);

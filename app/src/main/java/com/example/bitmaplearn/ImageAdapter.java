@@ -38,7 +38,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     public ImageAdapter(Context context, List<String> imageUrls) {
         this.context = context;
         this.imageUrls = imageUrls;
-        this.executorService = Executors.newFixedThreadPool(imageUrls.size());
+        this.executorService = Executors.newFixedThreadPool(3);
     }
 
     public class ImageViewHolder extends RecyclerView.ViewHolder {
@@ -86,22 +86,18 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
             return;
         }
 
-            downloadedPositions.add(position);
-            executorService.submit(() -> {
-                synchronized (this) {
-                    Bitmap bitmap = getBitmapFromURL(url);
-                    File fileBitmap = saveBitmapToFile(bitmap, fileName, cacheDir);
-                    holder.imageView.post(() -> holder.imageView.setImageBitmap(bitmap));
-                    Log.d("Decode", "Executor: " + position);
-                }
-            });
-
-
+        downloadedPositions.add(position);
+        executorService.submit(() -> {
+            Bitmap bitmap = getBitmapFromURL(url);
+            File fileBitmap = saveBitmapToFile(bitmap, fileName, cacheDir);
+            holder.imageView.post(() -> holder.imageView.setImageBitmap(bitmap));
+            Log.d("Decode", "Executor: " + position);
+        });
     }
 
     @Override
     public int getItemCount() {
-        if(imageUrls != null){
+        if (imageUrls != null) {
             return imageUrls.size();
         }
         return 0;
@@ -112,7 +108,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         Request request = new Request.Builder()
                 .url(src)
                 .build();
-        try(Response response = client.newCall(request).execute()) {
+        try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 throw new IOException("Unexpected code " + response);
             }
@@ -129,7 +125,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         File file = new File(directory, fileName);
         FileOutputStream out = null;
 
-        if(!directory.exists()){
+        if (!directory.exists()) {
             directory.mkdirs();
         }
 

@@ -1,6 +1,7 @@
 package com.example.bitmaplearn;
 
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.ImageView;
 
 import androidx.activity.EdgeToEdge;
@@ -16,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private ImageAdapter adapter;
+    private Button clearBtn;
     private List<String> imageUrls = new ArrayList<>();
 
     @Override
@@ -56,9 +58,15 @@ public class MainActivity extends AppCompatActivity {
         imageUrls.add("https://vltrfdvwnuioloivsfvh.supabase.co/storage/v1/object/public/Image/Images/30.jpg");
 
         recyclerView = findViewById(R.id.recyclerView);
+        clearBtn = findViewById(R.id.clearBtn);
+
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new ImageAdapter(this, imageUrls);
         recyclerView.setAdapter(adapter);
+
+        clearBtn.setOnClickListener(v -> {
+            adapter.clearAllData();
+        });
 
     }
 

@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -63,12 +64,14 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
         String url = imageUrls.get(position);
         String fileName = "image_" + position + ".jpg";
-        File directory = new File(context.getCacheDir(), "image");
-        deleteDir(directory);
-        File cacheDir = new File(context.getCacheDir(), "imagess");
+        File cacheDir = new File(context.getCacheDir(), "images");
         File file = new File(cacheDir, fileName);
 
         holder.imageView.setImageResource(R.drawable.ic_launcher_background);
+
+        holder.imageView.setOnClickListener(v -> {
+            Toast.makeText(context, "Image at position " + position + " clicked.", Toast.LENGTH_SHORT).show();
+        });
 
         if (file.exists()) {
             Bitmap cachedBitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
@@ -93,9 +96,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
                 }
             });
 
-            holder.imageView.setOnClickListener(v -> {
-                Toast.makeText(context, "Image at position " + position + " clicked.", Toast.LENGTH_SHORT).show();
-            });
+
     }
 
     @Override
@@ -158,6 +159,14 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
             dir.delete();
             Log.d("Cache", "Đã xóa: " + dir.getAbsolutePath());
         }
+    }
+
+    public void clearAllData() {
+        File cacheDir = new File(context.getCacheDir(), "images");
+        deleteDir(cacheDir);
+        downloadedPositions.clear();
+        notifyDataSetChanged();
+        Toast.makeText(context, "Đã xóa cache", Toast.LENGTH_SHORT).show();
     }
 
 
